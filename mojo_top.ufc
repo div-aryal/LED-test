@@ -1,0 +1,95 @@
+global Color {
+  // BGR
+  const RED = h00DD00;
+  const GREEN = h0000DD;
+  const BLUE = hDD0000;
+  const YELLOW = h008888;
+  const WHITE = h888888;
+  const BLACK = h000000;
+}
+
+
+module mojo_top (
+    input clk,              // 50MHz clock
+    input rst_n,            // reset button (active low)
+    output led [8],         // 8 user controllable LEDs
+    input cclk,             // configuration clock, AVR ready when high
+    output spi_miso,        // AVR SPI MISO
+    input spi_ss,           // AVR SPI Slave Select
+    input spi_mosi,         // AVR SPI MOSI
+    input spi_sck,          // AVR SPI Clock
+    output spi_channel [4], // AVR general purpose pins (used by default to select ADC channel)
+    input avr_tx,           // AVR TX (FPGA RX)
+    output avr_rx,          // AVR RX (FPGA TX)
+    input avr_rx_busy,       // AVR RX buffer full
+    output led_data[11]
+    //need to input buttons later
+  ) {
+  
+  sig rst;                  // reset signal
+  const COLUMNS = 6;
+  const ROWS = 11;
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    reset_conditioner reset_cond;
+    led_matrix led_matrix;
+   //dff .q read .d write
+    dff a1;
+    dff a2;
+    dff a3;
+    dff a4;
+    dff a5;
+    dff a6;
+    dff a7;
+    dff a8;
+    dff a9;
+    dff a10;
+    dff a11;
+    dff color[24];
+    dff timer[28];
+    dff led_matrix_temp[ROWS][COLUMNS];
+    
+  }
+
+  dff row[6](.clk(clk), .rst(rst));
+  dff row2[6](.clk(clk), .rst(rst));
+  dff row3[6](.clk(clk), .rst(rst));
+  dff row4[6](.clk(clk), .rst(rst));
+  dff row5[6](.clk(clk), .rst(rst));
+  dff row6[6](.clk(clk), .rst(rst));
+  dff row7[6](.clk(clk), .rst(rst));
+  dff row8[6](.clk(clk), .rst(rst));
+  dff row9[6](.clk(clk), .rst(rst));
+  dff row10[6](.clk(clk), .rst(rst));
+  dff row11[6](.clk(clk), .rst(rst));
+  
+  always {
+    led_matrix.color = color.q;
+    led_matrix.matrix = led_matrix_temp.q;
+    led_matrix.rst = rst_n;
+    reset_cond.in = ~rst_n; // input raw inverted reset signal
+    rst = reset_cond.out;   // conditioned reset
+    
+    led = 8h00;             // turn LEDs off
+    spi_miso = bz;          // not using SPI
+    spi_channel = bzzzz;    // not using flags
+    avr_rx = bz;            // not using serial port
+    
+    a1.d = row.q;
+    a2.d = row2.q;
+    a3.d = row3.q;
+    a4.d = row4.q;
+    a5.d = row5.q;
+    a6.d = row6.q;
+    a7.d = row7.q;
+    a8.d = row8.q;
+    a9.d = row9.q;
+    a10.d = row10.q;
+    a11.d = row11.q;
+    
+    led_data = a1.q;
+    
+  }
+}
